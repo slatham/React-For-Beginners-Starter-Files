@@ -13,6 +13,10 @@ class App extends React.Component {
   };
   componentDidMount() {
     const { params } = this.props.match;
+    const localStorageRef = localStorage.getItem(params.storeId);
+    if (localStorageRef) {
+      this.setState({ order: JSON.parse(localStorageRef) });
+    }
     this.fishRef = base.syncDoc(`${params.storeId}/fishes`, {
       context: this,
       state: "fishes",
@@ -25,6 +29,10 @@ class App extends React.Component {
 
   componentDidUpdate() {
     console.log("update");
+    localStorage.setItem(
+      this.props.match.params.storeId,
+      JSON.stringify(this.state.order)
+    );
   }
 
   addFish = (fish) => {
@@ -34,6 +42,24 @@ class App extends React.Component {
       fishes,
     });
   };
+
+  deleteFish = (key) => {
+    const fishes = { ...this.state.fishes };
+
+    delete fishes[key];
+
+    this.setState({ fishes });
+  };
+
+  updateFish = (key, updatedFish) => {
+    // copy state and apply the changes
+    const fishes = {
+      ...this.state.fishes,
+      [key]: updatedFish,
+    };
+    this.setState({ fishes });
+  };
+
   loadSampleFishes = () => {
     this.setState({ fishes: sampleFishes });
   };
@@ -42,6 +68,11 @@ class App extends React.Component {
     // take a copy of state
     const order = { ...this.state.order };
     order[key] = order[key] + 1 || 1;
+    this.setState({ order });
+  };
+  removeFromOrder = (key) => {
+    const order = { ...this.state.order };
+    delete order[key];
     this.setState({ order });
   };
   render() {
@@ -61,10 +92,17 @@ class App extends React.Component {
             })}
           </ul>
         </div>
-        <Order fishes={this.state.fishes} order={this.state.order} />
+        <Order
+          removeFromOrder={this.removeFromOrder}
+          fishes={this.state.fishes}
+          order={this.state.order}
+        />
         <Inventory
           addFish={this.addFish}
           loadSampleFishes={this.loadSampleFishes}
+          fishes={this.state.fishes}
+          updateFish={this.updateFish}
+          deleteFish={this.deleteFish}
         />
       </div>
     );
